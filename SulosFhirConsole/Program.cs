@@ -80,8 +80,8 @@ namespace SulosFhirConsole
             //var fhirSearchParams = new FhirSearchParamsBuilder()
 
             //.Build();
-            /*
-            HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+            
+            /*HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
             builder.Services.Configure<FhirConfigOptions>(builder.Configuration.GetSection(FhirConfigOptions.ConfigSection));
             builder.Services.Configure<KeyVaultOptions>(builder.Configuration.GetSection(KeyVaultOptions.ConfigSection));
@@ -106,10 +106,10 @@ namespace SulosFhirConsole
             //var processingService = host.Services.GetService<IProcessingService>();
             //processingService.Process();
 
-            var client = new SecretClient(vaultUri: new Uri("https://kv-dev-hospice-app-denb.vault.azure.net/"), credential: new DefaultAzureCredential());
-            KeyVaultSecret secret = client.GetSecret("mysulos-fhir-url");
-            Console.WriteLine(secret.Value);
-            */
+            //var client = new SecretClient(vaultUri: new Uri("https://kv-dev-hospice-app-denb.vault.azure.net/"), credential: new DefaultAzureCredential());
+            //KeyVaultSecret secret = client.GetSecret("mysulos-fhir-url");
+            //Console.WriteLine(secret.Value);
+            //*/
 
 
             //var graphClient = GetAuthenticatedGraphClient();
