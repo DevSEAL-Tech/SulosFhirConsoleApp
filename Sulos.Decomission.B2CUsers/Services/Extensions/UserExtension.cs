@@ -1,7 +1,7 @@
 ﻿using Microsoft.Graph.Models;
-using Sulos.Decomission.B2CUsers.Services.Extensions;
+using Sulos.Decomission.B2CUsers.Models;
 
-namespace Sulos.Decomission.B2CUsers;
+namespace Sulos.Decomission.B2CUsers.Services.Extensions;
 
 public static class UserExtension
 {
@@ -12,7 +12,7 @@ public static class UserExtension
             FirstName = user.GivenName!,
             LastName = user.Surname!,
             EmailAddresses = user.Identities.Select(id => id.IssuerAssignedId).ToArray(),
-            FhirId =getValue(GraphServiceExtensionAttributes.FhirID, user, graphServiceExtensions),
+            FhirId = getValue(GraphServiceExtensionAttributes.FhirID, user, graphServiceExtensions),
             Role = getValue(GraphServiceExtensionAttributes.Role, user, graphServiceExtensions),
             RoleType = getValue(GraphServiceExtensionAttributes.RoleType, user, graphServiceExtensions),
             Profile = getValue(GraphServiceExtensionAttributes.Profile, user, graphServiceExtensions),
@@ -28,16 +28,4 @@ public static class UserExtension
         }
         return value.ToString();
     }
-}
-
-public class B2CUserExport
-{
-    public string FirstName { get; set; } = "";
-    public string LastName { get; set; } = "";
-    public string FhirId { get; set; } = "";
-    public string Role { get; set; } = "";
-    public string RoleType { get; set; } = "";
-    public string Profile { get; set; } = "";
-    public string OrganizationId { get; set; } = "";
-    public string[] EmailAddresses { get; set; }
 }

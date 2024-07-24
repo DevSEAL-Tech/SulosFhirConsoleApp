@@ -3,7 +3,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Graph.Models;
-using Sulos.Decomission.B2CUsers;
 using Sulos.Decomission.B2CUsers.Options;
 using Sulos.Decomission.B2CUsers.Services.Extensions;
 using Sulos.Decomission.B2CUsers.Services.Factory;

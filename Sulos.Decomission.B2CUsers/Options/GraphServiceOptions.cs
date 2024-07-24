@@ -8,8 +8,3 @@ public record GraphServiceOptions
     public required string ExtensionApplicationId { get; init; }
     public string Resource => "https://graph.microsoft.com/v1.0";
 }
-
-public record RunParameterOptions
-{
-    public required string Organization { get; init; }
-}
