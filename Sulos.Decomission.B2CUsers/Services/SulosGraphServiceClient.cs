@@ -10,7 +10,6 @@ namespace Sulos.Decomission.B2CUsers.Services;
 
 public class SulosGraphServiceClient : ISulosGraphServiceClient
 {
-    public string OrganizationId { get; }
     private readonly GraphServiceClient _client;
     private readonly ILogger<SulosGraphServiceClient> _logger;
     private readonly string _orgIdKey;
@@ -20,12 +19,10 @@ public class SulosGraphServiceClient : ISulosGraphServiceClient
     private readonly string _profileKey;
 
     public SulosGraphServiceClient(GraphServiceClient client,
-        string organizationId,
         string rawExtensionApplicationId,
         ILogger<SulosGraphServiceClient> logger
     )
     {
-        OrganizationId = organizationId;
         var graphServiceExtensions = new GraphServiceExtensions(rawExtensionApplicationId);
         _client = client;
         _logger = logger;
@@ -37,23 +34,15 @@ public class SulosGraphServiceClient : ISulosGraphServiceClient
         _profileKey = graphServiceExtensions[GraphServiceExtensionAttributes.Profile];
     }
 
-    public async Task<IEnumerable<User>> GetAllUsersInCurrentOrganisation()
+    public async Task<IEnumerable<User>> GetAllUsersInCurrentOrganisation(string organizationId)
     {
         var users = new List<User>();
         try
         {
             var userResponse = await _client.Users.GetAsync(config =>
             {
-                config.QueryParameters.Filter = BuildFhirOrgFilter();
-                config.QueryParameters.Select = new[]
-                {
-                        "displayName",
-                        "accountEnabled",
-                        _fhirIdKey,
-                        _roleKey,
-                        _roleTypeKey,
-                        _profileKey
-                    };
+                config.QueryParameters.Filter = BuildFhirOrgFilter(organizationId);
+                config.QueryParameters.Select = SelectQueryParameters;
             });
 
             if (userResponse == null)
@@ -86,11 +75,11 @@ public class SulosGraphServiceClient : ISulosGraphServiceClient
         return users;
     }
 
-    public async Task<User> GetUserByFhirId(string fhirId, CancellationToken cancellationToken)
+    public async Task<User> GetUserByOrganizationAndFhirId(string organizationId,string fhirId, CancellationToken cancellationToken)
     {
         try
         {
-            var searchResults = await GetUsersByFhirId(fhirId, cancellationToken);
+            var searchResults = await GetUsersByOrganizationAndFhirId(organizationId,fhirId, cancellationToken);
             if (searchResults is { Value.Count: 1 })
             {
                 return searchResults.Value[0];
@@ -116,27 +105,84 @@ public class SulosGraphServiceClient : ISulosGraphServiceClient
         }
     }
 
-    private async Task<UserCollectionResponse?> GetUsersByFhirId(
+    public async Task DeleteUserByOrganizationAndFhirId(string organizationId, string fhirId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userToDelete = await GetUserByOrganizationAndFhirId(organizationId, fhirId, cancellationToken);
+
+            await DeleteUserByUserId(userToDelete.Id!, cancellationToken);         
+        }
+        catch (AuthenticationFailedException e)
+        {
+            _logger.LogError(e, "B2C Graph API authentication failure");
+            throw new GraphServiceException(e.Message);
+        }
+        catch (ServiceException e)
+        {
+            _logger.LogError(e, "B2C Graph API failure");
+            throw new GraphServiceException(e.Message);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Unexpected error {Message}", e.Message);
+            throw new GraphServiceException(e.Message);
+        }
+    }
+
+    public async Task DeleteUserByUserId(string userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _client.Users[userId].DeleteAsync(cancellationToken: cancellationToken);
+        }
+        catch (AuthenticationFailedException e)
+        {
+            _logger.LogError(e, "B2C Graph API authentication failure");
+            throw new GraphServiceException(e.Message);
+        }
+        catch (ServiceException e)
+        {
+            _logger.LogError(e, "B2C Graph API failure");
+            throw new GraphServiceException(e.Message);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Unexpected error {Message}", e.Message);
+            throw new GraphServiceException(e.Message);
+        }
+    }
+
+    private async Task<UserCollectionResponse?> GetUsersByOrganizationAndFhirId(
+        string organizationId,
         string fhirId,
         CancellationToken cancellationToken) =>
         await _client.Users.GetAsync(config =>
             {
-                config.QueryParameters.Filter = BuildFhirOrgAndFhirIdFilter(fhirId);
-                config.QueryParameters.Select = new[]
-                {
-                    "id",
-                    "accountEnabled",
-                    _roleKey,
-                    _roleTypeKey,
-                    _profileKey
-                };
+                config.QueryParameters.Filter = BuildFhirOrgAndFhirIdFilter(organizationId, fhirId);
+                config.QueryParameters.Select = SelectQueryParameters;
             },
             cancellationToken
         );
 
-    private string BuildFhirOrgAndFhirIdFilter(string fhirId) =>
-        $"{BuildFhirOrgFilter()} and {_fhirIdKey} eq '{fhirId}'";
+    private string[] SelectQueryParameters =>
+    [
+        "id",
+        "displayName",
+        "accountEnabled",
+        "identities",
+        "givenName",
+        "surname",
+        _orgIdKey,
+        _fhirIdKey,
+        _roleKey,
+        _roleTypeKey,
+        _profileKey
+    ];
 
-    private string BuildFhirOrgFilter() =>
-        $"{_orgIdKey} eq '{OrganizationId}'";
+    private string BuildFhirOrgAndFhirIdFilter(string organizationId,string fhirId) =>
+        $"{BuildFhirOrgFilter(organizationId)} and {_fhirIdKey} eq '{fhirId}'";
+
+    private string BuildFhirOrgFilter(string organizationId) =>
+        $"{_orgIdKey} eq '{organizationId}'";
 }
