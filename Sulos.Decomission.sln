@@ -5,9 +5,9 @@ VisualStudioVersion = 17.9.34723.18
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sulos.Decomission.FhirUsers", "Sulos.Decomission.FhirUsers\Sulos.Decomission.FhirUsers.csproj", "{15CE194E-6DBB-45A2-8065-FE3EED8F2E9F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sulos.Decomission.B2CUsers", "Sulos.Decomission.B2CUsers\Sulos.Decomission.B2CUsers.csproj", "{A3099EE4-9AE0-46AE-8312-B8C68B4B09A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sulos.Decomission.B2CUsers", "Sulos.Decomission.B2CUsers\Sulos.Decomission.B2CUsers.csproj", "{A3099EE4-9AE0-46AE-8312-B8C68B4B09A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sulos.Decomission.TwilioChat", "Sulos.Decomission.TwilioChat\Sulos.Decomission.TwilioChat.csproj", "{B05CCD30-E817-4A21-A55A-32EDA04819C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sulos.Decomission.TwilioChat", "Sulos.Decomission.TwilioChat\Sulos.Decomission.TwilioChat.csproj", "{B05CCD30-E817-4A21-A55A-32EDA04819C4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

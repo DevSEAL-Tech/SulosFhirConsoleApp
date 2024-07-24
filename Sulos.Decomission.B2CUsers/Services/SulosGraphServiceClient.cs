@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
+using Sulos.Decomission.B2CUsers.Services.Exceptions;
 using Sulos.Decomission.B2CUsers.Services.Extensions;
 using Sulos.Decomission.B2CUsers.Services.Interfaces;
 
