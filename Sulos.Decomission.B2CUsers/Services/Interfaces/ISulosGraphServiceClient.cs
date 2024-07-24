@@ -4,7 +4,8 @@ namespace Sulos.Decomission.B2CUsers.Services.Interfaces;
 
 public interface ISulosGraphServiceClient
 {
-    string OrganizationId { get; }
-    Task<User> GetUserByFhirId(string fhirId, CancellationToken cancellationToken);
-    Task<IEnumerable<User>> GetAllUsersInCurrentOrganisation();
+    Task<User> GetUserByOrganizationAndFhirId(string organizationId,string fhirId, CancellationToken cancellationToken);
+    Task<IEnumerable<User>> GetAllUsersInCurrentOrganisation(string organizationId);
+    Task DeleteUserByOrganizationAndFhirId(string organizationId, string fhirId, CancellationToken cancellationToken);
+    Task DeleteUserByUserId(string userId, CancellationToken cancellationToken);
 }
