@@ -3,7 +3,6 @@ using Hl7.Fhir.Rest;
 using Hl7.Fhir.Support;
 using Hl7.Fhir.Utility;
 using Task = Hl7.Fhir.Model.Task;
-using Sulos.Hospice.Care.Models.Patients;
 using static Hl7.Fhir.Model.DataRequirement;
 
 namespace Sulos.Hospice.Care.Core.Common.Fhir.Searching;
@@ -85,14 +84,14 @@ public class FhirSearchParamsBuilder
         return this;
     }
 
-    public FhirSearchParamsBuilder WhereVitalSign(VitalSignKey? key)
-    {
-        if (key == null)
-            return this;
+    //public FhirSearchParamsBuilder WhereVitalSign(VitalSignKey? key)
+    //{
+    //    if (key == null)
+    //        return this;
 
-        _params.Where($"combo-code={key}");
-        return this;
-    }
+    //    _params.Where($"combo-code={key}");
+    //    return this;
+    //}
 
     public FhirSearchParamsBuilder WhereSubject<T>(string subjectId)
     {

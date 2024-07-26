@@ -8,17 +8,33 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="CommandBus.cs" />
+    <Compile Remove="CqrsBus.cs" />
+    <Compile Remove="LoggingCqrsBus.cs" />
+    <Compile Remove="Program_old.cs" />
+    <Compile Remove="QueryBus.cs" />
+    <Compile Remove="VitalSign.cs" />
+    <Compile Remove="WebApplicationBuilderExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Core" Version="1.41.0" />
     <PackageReference Include="Azure.Identity" Version="1.12.0" />
     <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.6.0" />
     <PackageReference Include="Hl7.Fhir.R4" Version="5.8.2" />
     <PackageReference Include="MediatR" Version="12.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
     <PackageReference Include="Microsoft.Graph" Version="5.56.0" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.62.0" />
+    <PackageReference Include="Polly" Version="8.4.1" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
