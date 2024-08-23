@@ -1,6 +1,6 @@
-﻿namespace Sulos.Decomission.B2CUsers.Models;
+﻿namespace Sulos.Decomission.Shared.Models;
 
-public class B2CUserExport
+public class UserExport
 {
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
@@ -10,4 +10,5 @@ public class B2CUserExport
     public string Profile { get; set; } = "";
     public string OrganizationId { get; set; } = "";
     public string[] EmailAddresses { get; set; }
+
 }

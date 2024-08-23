@@ -10,11 +10,13 @@ using Sulos.Api.Common.Fhir;
 using Sulos.Decomission.FhirUsers.Services.Interfaces;
 using Sulos.Hospice.Care.Core.Common.Fhir;
 using Sulos.Hospice.Care.Core.Common.Fhir.Http;
-using System.Text.Json;
 using Task = System.Threading.Tasks.Task;
 using Sulos.Decomission.B2CUsers.Options;
 using Sulos.Hospice.Care.Models.Common;
 using Sulos.Hospice.Care.Models.Users;
+using Sulos.Hospice.Care.Core.Common.Azure;
+using Sulos.Decomission.Shared.Extensions;
+using Sulos.Decomission.FhirUsers.Extensions;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
@@ -28,37 +30,40 @@ builder.Services.AddOptions<RunParameterOptions>()
     .ValidateOnStart();
 
 builder.Services.AddAzureClients(builder =>
-    {
+{
        
-        builder.UseCredential(new DefaultAzureCredential());
-    });
-    builder.Services.AddSingleton<ISulosFhirClientFactory, ApiSulosFhirClientFactory>();
-    builder.Services.TryAddTransient<ISulosGetPatients, SulosGetPatients>();
-    builder.Services.TryAddTransient<ISulosGetPractitioners, SulosGetPractitioners>();
+    builder.UseCredential(new DefaultAzureCredential());
+});
+builder.Services.AddSingleton<ISulosFhirClientFactory, ApiSulosFhirClientFactory>();
+builder.Services.TryAddTransient<ISulosGetPatients, SulosGetPatients>();
+builder.Services.TryAddTransient<ISulosGetPractitioners, SulosGetPractitioners>();
+builder.Services.TryAddTransient<IFhirClientOptionsFactory, FhirClientOptionsFactory>();
+builder.Services.TryAddTransient<IAzureAccessTokenFactory, AzureAccessTokenFactory>();
+builder.Services.TryAddTransient<IFhirHttpMessageHandlerFactory, FhirHttpMessageHandlerFactory>();
+builder.Services.AddHttpClient();
 
-    builder.Services.TryAddTransient<IFhirClientOptionsFactory, FhirClientOptionsFactory>();
-    builder.Services.TryAddTransient<IFhirHttpMessageHandlerFactory, FhirHttpMessageHandlerFactory>();
-    builder.Services.AddHttpClient();
+using (IHost host = builder.Build())
+{
+    using IServiceScope serviceScope = host.Services.CreateScope();
+    IServiceProvider provider = serviceScope.ServiceProvider;
+    var runParametersOptions = provider.GetRequiredService<IOptions<RunParameterOptions>>();
 
-    using (IHost host = builder.Build())
-    {
-        using IServiceScope serviceScope = host.Services.CreateScope();
-        IServiceProvider provider = serviceScope.ServiceProvider;
-        var runParametersOptions = provider.GetRequiredService<IOptions<RunParameterOptions>>();
+    var organization = runParametersOptions.Value.Organization;
 
-        var organization = runParametersOptions.Value.Organization;
-
-        var patients = await GetPatientAsync(provider);
-        var practitioners = await GetPractitionersAsync(provider);
+    var patients = await GetPatientAsync(provider);
+    var practitioners = await GetPractitionersAsync(provider);
 
     var everyone = patients.Select(pat => pat.ToSulosPersonModel()).Concat(practitioners.Select(pra => pra.ToSulosPersonModel()));
 
-        var serializedUsers = JsonSerializer.Serialize(everyone);
-        await File.WriteAllTextAsync($"fhir-{organization}-user.json", serializedUsers);
+    var exportableUsers = everyone.Select(el => el.ToExportObject());
 
-        await DeleteUsers(provider, everyone);
-        await host.RunAsync();
-    }
+    var serializedUsers = UserExportExtensions.SerializeCollection(exportableUsers);
+
+    await File.WriteAllTextAsync($"fhir-{organization}-user.json", serializedUsers);
+
+    await DeleteUsers(provider, everyone);
+    await host.RunAsync();
+}
 
 static async Task<Patient[]> GetPatientAsync(IServiceProvider provider)
 {
@@ -100,13 +105,13 @@ static async Task DeleteUsers(IServiceProvider hostProvider, IEnumerable<SulosPe
         if (person is {PersonType: PersonType.InternalUser })
         {
             var existingPerson = await sulosClient.EnsureEntityExists<Practitioner>(person.Id).ConfigureAwait(false);
-            Console.WriteLine($"Deleting {existingPerson.Name}");
-            await sulosClient.DeleteAsync(existingPerson).ConfigureAwait(false);
+            Console.WriteLine($"Deleting {existingPerson.GetFirstName()} {existingPerson.GetLastName()}");
+            // sulosClient.DeleteAsync(existingPerson).ConfigureAwait(false);
         }else if (person is {PersonType: PersonType.Patient })
         {
             var existingPerson = await sulosClient.EnsureEntityExists<Patient>(person.Id).ConfigureAwait(false);
-            Console.WriteLine($"Deleting {existingPerson.Name}");
-            await sulosClient.DeleteAsync(existingPerson).ConfigureAwait(false);
+            Console.WriteLine($"Deleting {existingPerson.GetFirstName()} {existingPerson.GetLastName()}");
+            //await sulosClient.DeleteAsync(existingPerson).ConfigureAwait(false);
         }
     }
 }

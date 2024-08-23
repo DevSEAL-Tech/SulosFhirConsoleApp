@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sulos.Decomission.B2CUsers"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sulos.Decomission.TwilioChat", "Sulos.Decomission.TwilioChat\Sulos.Decomission.TwilioChat.csproj", "{B05CCD30-E817-4A21-A55A-32EDA04819C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sulos.Decomission.Shared", "Sulos.Decomission.Shared\Sulos.Decomission.Shared.csproj", "{5597D3CE-17B8-4C4E-BD18-44FC51464293}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{B05CCD30-E817-4A21-A55A-32EDA04819C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B05CCD30-E817-4A21-A55A-32EDA04819C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B05CCD30-E817-4A21-A55A-32EDA04819C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5597D3CE-17B8-4C4E-BD18-44FC51464293}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5597D3CE-17B8-4C4E-BD18-44FC51464293}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5597D3CE-17B8-4C4E-BD18-44FC51464293}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5597D3CE-17B8-4C4E-BD18-44FC51464293}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

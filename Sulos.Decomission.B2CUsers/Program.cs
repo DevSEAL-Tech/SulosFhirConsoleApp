@@ -7,7 +7,7 @@ using Sulos.Decomission.B2CUsers.Options;
 using Sulos.Decomission.B2CUsers.Services.Extensions;
 using Sulos.Decomission.B2CUsers.Services.Factory;
 using Sulos.Decomission.B2CUsers.Services.Interfaces;
-using System.Text.Json;
+using Sulos.Decomission.Shared.Extensions;
 
 Console.WriteLine("Hello, World!");
 
@@ -63,12 +63,10 @@ static async Task ExportUsers(IServiceProvider hostProvider, IEnumerable<User> u
 
     var exportableUsers = users.Select(el => el.ToExportObject(graphServiceExtensions));
 
-    var serializedUsers = JsonSerializer.Serialize(exportableUsers);
+    var serializedUsers = UserExportExtensions.SerializeCollection(exportableUsers);
 
     await File.WriteAllTextAsync($"b2c-{organizationId}-user.json", serializedUsers);
 }
-
-
 
 static async Task DeleteUsers(IServiceProvider hostProvider, IEnumerable<User> users)
 {

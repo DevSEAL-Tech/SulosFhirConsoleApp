@@ -14,6 +14,7 @@ public static class FhirPractitionerExtensions
             practitioner.Id,
             practitioner.GetFirstName(),
             practitioner.GetLastName(),
+            practitioner.GetEmailAddress(),
             PersonType.InternalUser
         );
     }
@@ -24,4 +25,9 @@ public static class FhirPractitionerExtensions
     public static string GetFirstName(this Practitioner practitioner) => practitioner.GetUsualName().GetFirstName();
 
     public static string GetLastName(this Practitioner practitioner) => practitioner.GetUsualName().GetLastName();
+
+    public static string GetEmailAddress(this Practitioner practitioner) =>
+        practitioner.Telecom
+            .Find(contact => contact.System == ContactPoint.ContactPointSystem.Email)
+            ?.Value;
 }

@@ -1,13 +1,13 @@
 ﻿using Microsoft.Graph.Models;
-using Sulos.Decomission.B2CUsers.Models;
+using Sulos.Decomission.Shared.Models;
 
 namespace Sulos.Decomission.B2CUsers.Services.Extensions;
 
 public static class UserExtension
 {
-    public static B2CUserExport ToExportObject(this User user, GraphServiceExtensions graphServiceExtensions)
+    public static UserExport ToExportObject(this User user, GraphServiceExtensions graphServiceExtensions)
     {
-        return new B2CUserExport
+        return new UserExport
         {
             FirstName = user.GivenName!,
             LastName = user.Surname!,

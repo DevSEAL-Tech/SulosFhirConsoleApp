@@ -20,10 +20,10 @@ public class FhirClientOptionsFactory : IFhirClientOptionsFactory
 
     public ClientCredentialsOptions CreateReaderAsync(string organization)
     {
-        var urlSecret =  $"{Options.UrlPostfix}";
-        var clientIdSecret =  $"{Options.ReaderClientIdPostfix}";
-        var clientSecret =  $"{Options.ReaderClientSecretPostfix}";
-        var tenantIdSecret =  $"{Options.TenantIdPostfix}";
+        var urlSecret =  $"{Options.Url}";
+        var clientIdSecret =  $"{Options.ReaderClientId}";
+        var clientSecret =  $"{Options.ReaderClientSecret}";
+        var tenantIdSecret =  $"{Options.TenantId}";
         return new ClientCredentialsOptions(
             urlSecret,
             clientIdSecret,
@@ -33,10 +33,10 @@ public class FhirClientOptionsFactory : IFhirClientOptionsFactory
 
     public ClientCredentialsOptions CreateWriterAsync(string organization)
     {
-        var urlSecret =  $"{Options.UrlPostfix}";
-        var clientIdSecret =  $"{Options.WriterClientIdPostfix}";
-        var clientSecret =  $"{Options.WriterClientSecretPostfix}";
-        var tenantIdSecret =  $"{Options.TenantIdPostfix}";
+        var urlSecret =  $"{Options.Url}";
+        var clientIdSecret =  $"{Options.WriterClientId}";
+        var clientSecret =  $"{Options.WriterClientSecret}";
+        var tenantIdSecret =  $"{Options.TenantId}";
         return new ClientCredentialsOptions(
             urlSecret,
             clientIdSecret,

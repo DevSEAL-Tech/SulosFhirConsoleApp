@@ -5,6 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <UserSecretsId>44da51a7-cf29-4bb6-9d64-268b28e10634</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +36,10 @@
     <PackageReference Include="Polly" Version="8.4.1" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sulos.Decomission.Shared\Sulos.Decomission.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

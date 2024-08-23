@@ -3,11 +3,11 @@
 public class FhirConfigOptions
 {
     public const string ConfigSection = "Fhir";
-    public string UrlPostfix { get; set; } = "";
-    public string ReaderClientIdPostfix { get; set; } = "";
-    public string ReaderClientSecretPostfix { get; set; } = "";
-    public string WriterClientIdPostfix { get; set; } = "";
-    public string WriterClientSecretPostfix { get; set; } = "";
-    public string TenantIdPostfix { get; set; } = "";
+    public string Url { get; set; } = "";
+    public string ReaderClientId { get; set; } = "";
+    public string ReaderClientSecret { get; set; } = "";
+    public string WriterClientId { get; set; } = "";
+    public string WriterClientSecret { get; set; } = "";
+    public string TenantId { get; set; } = "";
     public int MaxBundleEntryCount { get; set; } = 500;
 }

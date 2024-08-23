@@ -7,6 +7,7 @@ public record SulosPersonModel(
     string Id,
     string FirstName,
     string LastName,
+    string EmailAddress,
     PersonType PersonType
 );
 

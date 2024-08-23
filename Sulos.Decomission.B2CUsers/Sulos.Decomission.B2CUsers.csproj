@@ -17,6 +17,11 @@
     <PackageReference Include="Microsoft.Graph" Version="5.56.0" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sulos.Decomission.Shared\Sulos.Decomission.Shared.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

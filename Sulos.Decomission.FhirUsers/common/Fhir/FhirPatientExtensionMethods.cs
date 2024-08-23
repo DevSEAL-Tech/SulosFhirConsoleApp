@@ -11,6 +11,7 @@ public static class FhirPatientExtensionMethods
           patient.Id,
           patient.GetFirstName(),
           patient.GetLastName(),
+          patient.GetEmailAddress(),
           PersonType.Patient
       );
 
@@ -18,8 +19,10 @@ public static class FhirPatientExtensionMethods
 
     public static string GetLastName(this Patient patient) => patient.GetUsualName().GetLastName();
 
-    public static HumanName.NameUse? GetNameUse(this Patient patient) =>
-        patient.Name.FirstOrDefault()?.Use;
+    public static string GetEmailAddress(this Patient patient) =>
+        patient.Telecom
+            .Find(contact => contact.System == ContactPoint.ContactPointSystem.Email)
+            ?.Value;
 
     private static HumanName? GetUsualName(this Patient patient) =>
     patient.Name.Find(n => n.Use == HumanName.NameUse.Usual);
