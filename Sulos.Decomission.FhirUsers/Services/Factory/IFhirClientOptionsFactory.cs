@@ -1,30 +1,24 @@
-﻿using Azure.Security.KeyVault.Secrets;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Sulos.Hospice.Care.Core.Common.Azure;
 
 namespace Sulos.Hospice.Care.Core.Common.Fhir;
 
 public interface IFhirClientOptionsFactory
 {
-    Task<ClientCredentialsOptions> CreateReaderAsync();
-    Task<ClientCredentialsOptions> CreateWriterAsync();
+    ClientCredentialsOptions CreateReaderAsync(string organization);
+    ClientCredentialsOptions CreateWriterAsync(string organization);
 }
 
 public class FhirClientOptionsFactory : IFhirClientOptionsFactory
 {
-    private readonly IOptions<FhirConfigOptions> _fhirConfigOptions;
-    //private readonly SecretClient _secretClient;
+    private FhirConfigOptions Options { get; }
 
-    private FhirConfigOptions Options => _fhirConfigOptions.Value;
-
-    //public FhirClientOptionsFactory(IOptions<FhirConfigOptions> fhirConfigOptions, SecretClient secretClient)
     public FhirClientOptionsFactory(IOptions<FhirConfigOptions> fhirConfigOptions)
     {
-        _fhirConfigOptions = fhirConfigOptions;
-        //_secretClient = secretClient;
+        Options = fhirConfigOptions.Value;
     }
 
-    public async Task<ClientCredentialsOptions> CreateReaderAsync()
+    public ClientCredentialsOptions CreateReaderAsync(string organization)
     {
         var urlSecret =  $"{Options.UrlPostfix}";
         var clientIdSecret =  $"{Options.ReaderClientIdPostfix}";
@@ -37,7 +31,7 @@ public class FhirClientOptionsFactory : IFhirClientOptionsFactory
             tenantIdSecret);
     }
 
-    public async Task<ClientCredentialsOptions> CreateWriterAsync()
+    public ClientCredentialsOptions CreateWriterAsync(string organization)
     {
         var urlSecret =  $"{Options.UrlPostfix}";
         var clientIdSecret =  $"{Options.WriterClientIdPostfix}";

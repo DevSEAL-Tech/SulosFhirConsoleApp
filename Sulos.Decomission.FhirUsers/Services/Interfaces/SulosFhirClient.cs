@@ -14,7 +14,8 @@ public class SulosFhirClient : FhirClient
     public string HospiceId { get; }
     private int MaxBundleEntryCount { get; }
 
-    public SulosFhirClient(string hospiceId, ClientCredentialsOptions options, HttpMessageHandler handler,IOptions<FhirConfigOptions> fhirConfigOptions) : base(options.Resource, CreateSettings(), handler)
+    public SulosFhirClient(string hospiceId, ClientCredentialsOptions options, HttpMessageHandler handler,IOptions<FhirConfigOptions> fhirConfigOptions) 
+        : base(options.Resource, CreateSettings(), handler)
     {
         HospiceId = hospiceId;
         MaxBundleEntryCount = fhirConfigOptions.Value.MaxBundleEntryCount;

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Runtime.Serialization;
-using Hl7.Fhir.Rest;
+﻿using Hl7.Fhir.Rest;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
