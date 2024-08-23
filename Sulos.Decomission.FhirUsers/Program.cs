@@ -1,156 +1,165 @@
-﻿//using System;
-//using System.Net.Http;
-//using System.Net.Http.Headers;
-//using System.Text.Json;
-//using System.Threading.Tasks;
-//using Newtonsoft.Json.Linq;
-//using static SulosFhirConsole.Model;
-
+﻿using Azure.Core.Pipeline;
+using Azure.Core;
 using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
-using Hl7.Fhir;
 using Hl7.Fhir.Model;
-using Hl7.Fhir.Rest;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Graph;
-using Microsoft.Identity.Client;
+using Microsoft.Extensions.Options;
+using Microsoft.Graph.Models;
 using Sulos.Api.Common.Fhir;
-using Sulos.Hospice.Care.Core.Common.Cqrs;
-using Sulos.Hospice.Care.Core.Common.Cqrs.Commands;
-using Sulos.Hospice.Care.Core.Common.Cqrs.Queries;
+using Sulos.Decomission.FhirUsers.Services.Interfaces;
+using Sulos.Hospice.Care.Core.Common.Azure;
 using Sulos.Hospice.Care.Core.Common.Fhir;
+using Sulos.Hospice.Care.Core.Common.Fhir.Http;
 using Sulos.Hospice.Care.Core.Common.Fhir.Searching;
-using Sulos.Hospice.Care.Core.Common.KeyVault;
-using System.Threading.Tasks;
+using Group = Hl7.Fhir.Model.Group;
+using Bundle = Hl7.Fhir.Model.Bundle;
+using Hl7.Fhir.Rest;
+using Sulos.Hospice.Care.Models.Patients;
+using System.Text.Json;
 using Task = System.Threading.Tasks.Task;
+using MediatR;
+using Sulos.Decomission.B2CUsers.Options;
 
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-namespace SulosFhirConsole
-{
-    internal class Program
+builder.Logging.AddConsole();
+
+builder.Services.AddOptions<FhirConfigOptions>()
+    .Bind(builder.Configuration.GetSection("Fhir"))
+    .ValidateOnStart();
+builder.Services.AddOptions<RunParameterOptions>()
+    .Bind(builder.Configuration.GetSection("Parameters"))
+    .ValidateOnStart();
+
+builder.Services.AddAzureClients(builder =>
     {
-        /*private static readonly string clientId = "your-client-id";
-        private static readonly string clientSecret = "your-client-secret";
-        private static readonly string tenantId = "your-tenant-id";
-        private static readonly string patientId = "patient-id-or-upn"; */
+       
+        builder.UseCredential(new DefaultAzureCredential());
+    });
+    builder.Services.AddSingleton<ISulosFhirClientFactory, ApiSulosFhirClientFactory>();
+    builder.Services.TryAddTransient<ISulosGetPatients, SulosGetPatients>();
+    builder.Services.TryAddTransient<IFhirClientOptionsFactory, FhirClientOptionsFactory>();
+    builder.Services.TryAddTransient<IFhirHttpMessageHandlerFactory, FhirHttpMessageHandlerFactory>();
+    builder.Services.TryAddTransient<IAzureAccessTokenFactory, AzureAccessTokenFactory>();
+    builder.Services.AddHttpClient();
 
-        static async Task Main(string[] args)
+    static void ConfigureKeyVaultClientOptions<TOptions>(TOptions options, IServiceProvider provider)
+            where TOptions : ClientOptions
+    {
+        var handler = new HttpClientHandler();
+    #pragma warning disable S4830
+        handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+    #pragma warning restore S4830
+        options.Transport = new HttpClientTransport(handler);
+    }
+
+
+    using (IHost host = builder.Build())
+    {
+        using IServiceScope serviceScope = host.Services.CreateScope();
+        IServiceProvider provider = serviceScope.ServiceProvider;
+        var runParametersOptions = provider.GetRequiredService<IOptions<RunParameterOptions>>();
+
+        var organization = runParametersOptions.Value.Organization;
+
+        var patients = await GetPatientWithPractitionersAsync(host.Services);
+        var transactionBuilder = await BuildGroupMembersQueryTransactionBundle(host.Services, patients);
+        var groupMembersQueryResponses = await GetPaginatedQueryResponses(host.Services, transactionBuilder.ToBundle());
+        var response = BuildPatientsWithPractitioners(patients, groupMembersQueryResponses);
+        var serializedUsers = JsonSerializer.Serialize(response);
+        await File.WriteAllTextAsync($"fhir-{organization}-user.json", serializedUsers);
+
+        await DeleteUsers(host.Services, response);
+        await host.RunAsync();
+    }
+
+static async Task<Patient[]> GetPatientWithPractitionersAsync(IServiceProvider hostProvider)
+{
+    using IServiceScope serviceScope = hostProvider.CreateScope();
+    IServiceProvider provider = serviceScope.ServiceProvider;
+
+    var sulosclientFactory = provider.GetRequiredService<ISulosFhirClientFactory>();
+    var sulospatientService = provider.GetRequiredService<ISulosGetPatients>();
+    var sulosClient = await sulosclientFactory.CreateReaderAsync();
+
+    var patiensList = sulospatientService.GetPatients(sulosClient);
+    return await patiensList;
+}
+
+async Task<SulosTransactionBuilder> BuildGroupMembersQueryTransactionBundle(IServiceProvider hostProvider, Patient[] patients)
+{
+    using IServiceScope serviceScope = hostProvider.CreateScope();
+    IServiceProvider provider = serviceScope.ServiceProvider;
+
+    var sulosclientFactory = provider.GetRequiredService<ISulosFhirClientFactory>();
+    var transactionBuilder = await sulosclientFactory.CreateTransactionBuilder().ConfigureAwait(false);
+
+    foreach (var patient in patients)
+    {
+        transactionBuilder
+            .Search<Group>(
+                new FhirSearchParamsBuilder()
+                    .Where("type", "practitioner")
+                    .WhereGroupMember<Patient>(patient.Id)
+                    .Include("Group:member")
+                    .Build()
+            );
+    }
+
+    return transactionBuilder;
+}
+
+static async Task<Bundle[]> GetPaginatedQueryResponses(IServiceProvider hostProvider, Bundle query)
+{
+    using IServiceScope serviceScope = hostProvider.CreateScope();
+    IServiceProvider provider = serviceScope.ServiceProvider;
+    var sulosClientFactory = provider.GetRequiredService<ISulosFhirClientFactory>();
+    var sulosClient = await sulosClientFactory.CreateReaderAsync();
+    var groupMembersQueryResponses = await sulosClient.GetPaginatedQueryResponses(query);
+    return groupMembersQueryResponses;
+}
+
+static SulosPatientModelV2[] BuildPatientsWithPractitioners(IEnumerable<Patient> patients, IEnumerable<Bundle> groupMembersQueryResponses)
+{
+    return groupMembersQueryResponses
+        .SelectMany(b => b.GetResources())
+        .Select(r => (Bundle)r)
+        .Zip(patients)
+        .Select(BuildPatientWithPractitioners)
+        .ToArray();
+}
+
+
+static SulosPatientModelV2 BuildPatientWithPractitioners((Bundle, Patient) patientData)
+{
+    var (groupMembersBundle, patient) = patientData;
+
+    return patient.ToSulosPatientModel(practitioners: groupMembersBundle.GetResourcesOfType<Practitioner>().ToArray()
+    );
+}
+
+static async Task DeleteUsers(IServiceProvider hostProvider, IEnumerable<SulosPatientModelV2> patients)
+{
+    using IServiceScope serviceScope = hostProvider.CreateScope();
+    IServiceProvider provider = serviceScope.ServiceProvider;
+
+    var sulosClientFactory = provider.GetRequiredService<ISulosFhirClientFactory>();
+    var sulosClient = await sulosClientFactory.CreateWriterAsync();
+
+    int taiwo = 0;
+    foreach (var patient in patients)
+    {
+        if (taiwo == -1)
         {
-            var settings = new FhirClientSettings
-            {
-                //Timeout = 0,
-                PreferredFormat = ResourceFormat.Json,
-                VerifyFhirVersion = true,
-                ReturnPreference = ReturnPreference.Minimal
-            };
-            // Create a custom HttpMessageHandler (if needed)
-            var httpMessageHandler = new HttpClientHandler();
-            var client = new FhirClient("https://devsulos.azurehealthcareapis.com",settings);
-            
-            var searchParams = new SearchParams();
-            //.LimitTo(10)   // Limit to 1 result for efficiency
-            //.SummaryOnly();
-
-            var patients = await client.SearchAsync<Patient>(searchParams);
-            
-            Console.WriteLine($"Total Patient :{patients.Entry.Count}");
-            int patientNumber = 0;
-            foreach (var patient in patients.Entry)
-            {
-                Console.WriteLine($"- Entry {patientNumber,3}: {patient.FullUrl}");
-                if (patient.Resource != null)
-                {
-                    Patient patient1 = (Patient)patient.Resource;
-                    System.Console.WriteLine($" - {patient1.Id,20}");
-                    if (patient1.Name.Count > 0)
-                    {
-                        System.Console.WriteLine($" - Name : {patient1.Name[0].ToString()}");
-                    }
-                }
-
-                patientNumber++;
-            }
-
-
-
-
-            //var fhirSearchParams = new FhirSearchParamsBuilder()
-
-            //.Build();
-            
-            /*HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-
-            builder.Services.Configure<FhirConfigOptions>(builder.Configuration.GetSection(FhirConfigOptions.ConfigSection));
-            builder.Services.Configure<KeyVaultOptions>(builder.Configuration.GetSection(KeyVaultOptions.ConfigSection));
-            builder.Services.AddMediatR(options =>
-            {
-                options.RegisterServicesFromAssemblies(typeof(Program).Assembly);
-            });
-            builder.Services.TryAddTransient<IQueryBus, QueryBus>();
-            builder.Services.TryAddTransient<ICommandBus, CommandBus>();
-            builder.Services.TryAddTransient<ICqrsBus>(p =>
-            {
-                var queryBus = p.GetRequiredService<IQueryBus>();
-                var commandBus = p.GetRequiredService<ICommandBus>();
-                var logger = p.GetRequiredService<ILogger<LoggingCqrsBus>>();
-                var cqrsBus = new CqrsBus(queryBus, commandBus);
-                return new LoggingCqrsBus(cqrsBus, logger);
-            });
-            builder.Services.TryAddTransient<IFhirClientOptionsFactory, FhirClientOptionsFactory>();
-
-            using IHost host = builder.Build();
-
-            //var processingService = host.Services.GetService<IProcessingService>();
-            //processingService.Process();
-
-            //var client = new SecretClient(vaultUri: new Uri("https://kv-dev-hospice-app-denb.vault.azure.net/"), credential: new DefaultAzureCredential());
-            //KeyVaultSecret secret = client.GetSecret("mysulos-fhir-url");
-            //Console.WriteLine(secret.Value);
-            //*/
-
-
-            //var graphClient = GetAuthenticatedGraphClient();
-            //await ReadPatientDataAsync(graphClient, patientId);
-
+            var existingPatient = await sulosClient.EnsureEntityExists<Patient>(patient.Id).ConfigureAwait(false);
+            Console.WriteLine($"Deleting {existingPatient.Name}");
+            await sulosClient.DeleteAsync(location: $"Patient/{patient.Id}").ConfigureAwait(false);
         }
-
-       /* private static GraphServiceClient GetAuthenticatedGraphClient()
-        {
-            var clientApp = ConfidentialClientApplicationBuilder.Create(clientId)
-                .WithClientSecret(clientSecret)
-                .WithAuthority(new Uri($"https://login.microsoftonline.com/{tenantId}"))
-                .Build();
-
-            var authProvider = new DelegateAuthenticationProvider(async (requestMessage) =>
-            {
-                var result = await clientApp.AcquireTokenForClient(new[] { "https://graph.microsoft.com/.default" })
-                                             .ExecuteAsync();
-
-                requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", result.AccessToken);
-            });
-
-            return new GraphServiceClient(authProvider);
-        }
-
-        private static async Task ReadPatientDataAsync(GraphServiceClient graphClient, string patientId)
-        {
-            try
-            {
-                // Example: Reading patient data
-                var patientData = await graphClient.Users.GetAsync(); 
-
-                //// Do something with patientData
-                //Console.WriteLine($"Patient Name: {patientData.DisplayName}");
-                // Do something with patientData
-                //Console.WriteLine($"Patient Name: {patientData.Value}");
-            }
-            catch (ServiceException ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
-        }*/
+        taiwo++;
+        //await sulosGraphClient.DeleteUserByUserId(user.Id!, cancelTokenSource.Token);
     }
 }

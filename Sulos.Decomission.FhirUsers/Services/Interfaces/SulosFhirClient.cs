@@ -4,35 +4,23 @@ using Microsoft.Extensions.Options;
 using Sulos.Hospice.Care.Core.Common.Azure;
 using Sulos.Hospice.Care.Core.Common.Exceptions;
 using Sulos.Hospice.Care.Core.Common.Fhir.Searching;
-
 using Task = System.Threading.Tasks.Task;
 
 namespace Sulos.Hospice.Care.Core.Common.Fhir;
 
 public class SulosFhirClient : FhirClient
 {
-    //private readonly IDnsHealthResolver _healthResolver;
+
     public string HospiceId { get; }
     private int MaxBundleEntryCount { get; }
 
-    public SulosFhirClient(string hospiceId, ClientCredentialsOptions options,
-        IOptions<FhirConfigOptions> fhirConfigOptions) : base(options.Resource, CreateSettings())
+    public SulosFhirClient(string hospiceId, ClientCredentialsOptions options, HttpMessageHandler handler,IOptions<FhirConfigOptions> fhirConfigOptions) : base(options.Resource, CreateSettings(), handler)
     {
-        //_healthResolver = healthResolver;
         HospiceId = hospiceId;
         MaxBundleEntryCount = fhirConfigOptions.Value.MaxBundleEntryCount;
     }
 
-    //public async Task<HealthCheckResult> HealthCheckAsync()
-    //{
-    //    var status = await _healthResolver.ResolveStatusAsync(Endpoint.ToString());
-    //    return status switch
-    //    {
-    //        HealthStatus.Healthy => HealthCheckResult.Healthy($"{HospiceId} FHIR service is available"),
-    //        _ => HealthCheckResult.Unhealthy($"{HospiceId} FHIR service is unavailable")
-    //    };
-    //}
-
+    
     public async Task<T> ReadById<T>(string id) where T : Resource =>
         await ReadAsync<T>($"{typeof(T).Name}/{id}").ConfigureAwait(false);
 
@@ -71,20 +59,7 @@ public class SulosFhirClient : FhirClient
         return bundle.GetResources().Cast<T>().FirstOrDefault();
     }
 
-    public async Task EnsurePatientDoesNotHaveDevice(string patientId)
-    {
-        var searchParams = new FhirSearchParamsBuilder()
-            .WhereReference<Patient>("patient", patientId)
-            .Build();
-
-        var deviceBundle = await SearchAsync<Device>(searchParams)
-            .ConfigureAwait(false);
-
-        if (deviceBundle.Entry.Count > 0)
-        {
-            throw new PatientHasDeviceException();
-        }
-    }
+    
 
     public async Task<Bundle[]> GetPaginatedQueryResponses(Bundle query)
     {

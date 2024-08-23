@@ -1,4 +1,4 @@
-﻿namespace Sulos.Hospice.Care.Core.Common.Azure;
+namespace Sulos.Hospice.Care.Core.Common.Azure;
 
 public record ClientCredentialsOptions(
     string Resource,
